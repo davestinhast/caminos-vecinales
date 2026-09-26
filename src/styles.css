@@ -1,0 +1,39 @@
+:root { --bg:#f4f6f9; --card:#fff; --ink:#1d2733; --mut:#5b6775; --pri:#2f6f4e; --pri2:#e8f3ec; --in:#fff7cc; --line:#dde3ea; }
+* { box-sizing: border-box; }
+body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.5 system-ui,Segoe UI,Roboto,sans-serif; }
+.app { max-width:1100px; margin:0 auto; padding-bottom:40px; }
+.hero { position:relative; height:230px; overflow:hidden; border-radius:0 0 18px 18px; }
+.hero-img { position:absolute; inset:0; width:100%; height:100%; }
+.hero-txt { position:absolute; left:0; right:0; top:0; padding:22px 20px; background:linear-gradient(#0009,#0000); color:#fff; }
+.hero-txt h1 { margin:0 0 4px; font-size:clamp(20px,4vw,30px); }
+.hero-txt p { margin:0; opacity:.95; }
+.tabs { display:flex; gap:4px; overflow-x:auto; padding:10px 12px; position:sticky; top:0; background:var(--bg); z-index:5; }
+.tabs button, .chips button, .btns button { border:1px solid var(--line); background:#fff; padding:8px 14px; border-radius:20px; cursor:pointer; white-space:nowrap; font:inherit; }
+.tabs button.on, .chips button.on { background:var(--pri); color:#fff; border-color:var(--pri); }
+.btns { display:flex; gap:8px; flex-wrap:wrap; margin-top:14px; } .btns .warn { color:#b3261e; }
+.kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:10px; padding:0 12px; }
+.kpis div { background:var(--card); border-radius:12px; padding:10px 14px; box-shadow:0 1px 3px #0001; display:flex; flex-direction:column; }
+.kpis span { color:var(--mut); font-size:12px; } .kpis b { font-size:19px; color:var(--pri); } .kpis small { color:var(--mut); }
+main { padding:12px; } .card { background:var(--card); border-radius:14px; padding:18px; margin-bottom:14px; box-shadow:0 1px 4px #0001; }
+h2 { margin:0 0 10px; color:var(--pri); font-size:20px; } h3 { margin:18px 0 8px; font-size:16px; }
+.grid2 { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:12px; } .grid1 { display:grid; gap:12px; }
+label { display:flex; flex-direction:column; gap:4px; font-size:13px; color:var(--mut); } label small { color:#8a6d00; }
+.inl { flex-direction:row; align-items:center; gap:8px; margin-bottom:8px; }
+.in { background:var(--in); border:1px solid #e0cf7a; border-radius:8px; padding:7px 9px; font:inherit; color:var(--ink); min-width:0; }
+.in.txt { width:100%; } .in.mini { width:52px; padding:3px 4px; text-align:center; } .ley { background:var(--in); padding:0 6px; border-radius:4px; }
+.scroll { overflow-x:auto; } table { border-collapse:collapse; font-size:13px; } .w { width:100%; }
+th { background:var(--pri2); color:var(--pri); font-weight:600; } th,td { border:1px solid var(--line); padding:5px 8px; text-align:right; }
+td.l, th:first-child { text-align:left; } tr.tot td { background:#f0f4f7; font-weight:700; } tr.big td { background:var(--pri2); font-size:15px; }
+.vi { display:inline-block; vertical-align:middle; margin-right:6px; color:var(--pri); } td.hl { background:#fff0b8; }
+.note { color:var(--mut); font-size:12px; } .row { display:flex; gap:16px; flex-wrap:wrap; align-items:center; } .row > * { flex:1 1 300px; }
+.chart, .fig { width:100%; max-width:680px; height:auto; display:block; margin:10px auto; } .fig { border-radius:10px; }
+.result { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:10px; margin:16px 0; }
+.result div { background:var(--pri2); border-radius:12px; padding:12px; display:flex; flex-direction:column; } .result span { color:var(--mut); font-size:12px; } .result b { font-size:22px; color:var(--pri); }
+.chips { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; } .gl { padding:8px 0; border-bottom:1px solid var(--line); } dt { font-weight:700; color:var(--pri); } dd { margin:2px 0 0; }
+table.sm { font-size:11px; } table.tot-row { margin-top:6px; } footer { text-align:center; color:var(--mut); font-size:12px; padding:14px; }
+@media print { .tabs,.hero-txt,.btns { display:none } .hero { height:120px } body { background:#fff } }
+
+.cnt { display:inline-flex; align-items:center; gap:4px; } .cnt b { min-width:26px; text-align:center; }
+.cnt button { width:28px; height:28px; border-radius:8px; border:1px solid var(--line); background:#fff; font-size:16px; cursor:pointer; line-height:1; touch-action:manipulation; }
+.cnt button.plus { background:var(--pri); color:#fff; border-color:var(--pri); } .cnt button:active { transform:scale(.92); }
+table.sm .cnt button { width:22px; height:22px; font-size:13px; } table.sm .cnt b { min-width:18px; }
