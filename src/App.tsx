@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { AYUDA, VehIcon } from './art'
 
 const VEH = ['Auto', 'Camioneta', 'Combi', 'Micro', 'Bus', 'Camión chico', 'Camión grande']
@@ -19,52 +19,27 @@ const corta = (f: string) => {
 const sum = (a: number[] = []) => a.reduce((x, y) => x + y, 0)
 
 type Datos = Record<string, number[]>
-const KEY = 'cv-conteo'
+type Pend = Record<string, number> // "s1:0" -> cambios que aún no llegaron al servidor
+const KEY = 'cv-servidor'
+const KEYP = 'cv-pendiente'
 
-function leer(): Datos {
-  for (const k of [KEY, KEY + '-respaldo']) {
-    try {
-      const v = localStorage.getItem(k)
-      if (v) return JSON.parse(v)
-    } catch { /* probar respaldo */ }
-  }
-  return {}
-}
+const vacio = (): Datos => Object.fromEntries(SESIONES.map((x) => [x.id, VEH.map(() => 0)]))
 
-const total = (d: Datos) => Object.values(d).reduce((a, v) => a + sum(v), 0)
-
-function idb(): Promise<IDBDatabase> {
-  return new Promise((ok, mal) => {
-    const q = indexedDB.open('cv-conteo-db', 1)
-    q.onupgradeneeded = () => q.result.createObjectStore('k')
-    q.onsuccess = () => ok(q.result)
-    q.onerror = () => mal(q.error)
-  })
-}
-async function idbGuardar(d: Datos) {
+function leer<T>(k: string, def: T): T {
   try {
-    const db = await idb()
-    db.transaction('k', 'readwrite').objectStore('k').put(d, 'datos')
-  } catch { /* */ }
+    const v = localStorage.getItem(k)
+    return v ? { ...def, ...JSON.parse(v) } : def
+  } catch { return def }
 }
-async function idbLeer(): Promise<Datos | null> {
-  try {
-    const db = await idb()
-    return await new Promise((ok) => {
-      const q = db.transaction('k').objectStore('k').get('datos')
-      q.onsuccess = () => ok((q.result as Datos) ?? null)
-      q.onerror = () => ok(null)
-    })
-  } catch { return null }
+function escribir(k: string, v: unknown) {
+  try { localStorage.setItem(k, JSON.stringify(v)) } catch { /* */ }
 }
 
-function guardar(d: Datos) {
-  idbGuardar(d)
-  try {
-    const s = JSON.stringify(d)
-    localStorage.setItem(KEY + '-respaldo', localStorage.getItem(KEY) ?? s)
-    localStorage.setItem(KEY, s)
-  } catch { /* sin almacenamiento */ }
+// valor mostrado = servidor + cambios pendientes (nunca menor que 0)
+function mezclar(srv: Datos, pend: Pend): Datos {
+  const out: Datos = {}
+  for (const x of SESIONES) out[x.id] = VEH.map((_, k) => Math.max(0, (srv[x.id]?.[k] ?? 0) + (pend[`${x.id}:${k}`] ?? 0)))
+  return out
 }
 
 const hoyStr = () => {
@@ -73,26 +48,85 @@ const hoyStr = () => {
 }
 
 export default function App() {
-  const [datos, setDatos] = useState<Datos>(leer)
+  const [srv, setSrv] = useState<Datos>(() => ({ ...vacio(), ...leer<Datos>(KEY, {}) }))
+  const [pend, setPend] = useState<Pend>(() => leer<Pend>(KEYP, {}))
+  const [enLinea, setEnLinea] = useState(true)
+  const srvRef = useRef(srv)
+  const pendRef = useRef(pend)
+  const enVuelo = useRef(false)
+  const version = useRef(0)
+  const datos = mezclar(srv, pend)
   const hoy = hoyStr()
   const [id, setId] = useState((SESIONES.find((x) => x.fecha >= hoy) ?? SESIONES[SESIONES.length - 1]).id)
   const [aviso, setAviso] = useState('')
+
+  const fijarSrv = (d: Datos) => { srvRef.current = d; setSrv(d); escribir(KEY, d) }
+  const fijarPend = (p: Pend) => { pendRef.current = p; setPend(p); escribir(KEYP, p) }
+
+  // envía los cambios pendientes al servidor (cada uno es un +1 o -1, así nadie pisa a nadie)
+  const enviar = async () => {
+    if (enVuelo.current) return
+    enVuelo.current = true
+    try {
+      for (const [clave, delta] of Object.entries(pendRef.current)) {
+        if (!delta) continue
+        const [sesion, tipo] = clave.split(':')
+        const r = await fetch('/api/conteo', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ sesion, tipo: +tipo, delta }) })
+        if (!r.ok) throw new Error('fallo')
+        const { valor } = (await r.json()) as { valor: number }
+        const nuevo = { ...pendRef.current }
+        nuevo[clave] = (nuevo[clave] ?? 0) - delta
+        if (!nuevo[clave]) delete nuevo[clave]
+        version.current++
+        const s2 = { ...srvRef.current, [sesion]: (srvRef.current[sesion] ?? VEH.map(() => 0)).map((v, k) => (k === +tipo ? valor : v)) }
+        fijarSrv(s2)
+        fijarPend(nuevo)
+      }
+      setEnLinea(true)
+    } catch {
+      setEnLinea(false)
+    } finally {
+      enVuelo.current = false
+    }
+  }
+
+  // pide el conteo al servidor cada 2 segundos (así se ve lo de los demás casi al instante)
+  const traer = async () => {
+    const v0 = version.current
+    try {
+      const r = await fetch('/api/conteo', { cache: 'no-store' })
+      if (!r.ok) throw new Error('fallo')
+      const d = (await r.json()) as Datos
+      if (!enVuelo.current && v0 === version.current && !Object.keys(pendRef.current).length) fijarSrv({ ...vacio(), ...d })
+      setEnLinea(true)
+    } catch {
+      setEnLinea(false)
+    }
+  }
+
   useEffect(() => {
     try { navigator.storage?.persist?.() } catch { /* */ }
-    // recuperar la copia de IndexedDB si tiene más conteo que la principal
-    idbLeer().then((c) => {
-      if (c && total(c) > total(leer())) { setDatos(c); guardar(c) }
-    })
+    traer()
+    enviar()
+    const t = setInterval(() => { if (document.visibilityState === 'visible') { enviar(); traer() } }, 2000)
+    const v = () => { if (document.visibilityState === 'visible') { enviar(); traer() } }
+    document.addEventListener('visibilitychange', v)
+    window.addEventListener('online', v)
+    return () => { clearInterval(t); document.removeEventListener('visibilitychange', v); window.removeEventListener('online', v) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const ses = SESIONES.find((x) => x.id === id)!
   const cur = datos[id] ?? VEH.map(() => 0)
 
   const cambiar = (i: number, d: number) => {
-    const nuevo = { ...datos, [id]: cur.map((v, x) => (x === i ? Math.max(0, v + d) : v)) }
-    setDatos(nuevo)
-    guardar(nuevo)
+    if (d < 0 && cur[i] <= 0) return
+    const clave = `${id}:${i}`
+    const nuevo = { ...pendRef.current, [clave]: (pendRef.current[clave] ?? 0) + d }
+    if (!nuevo[clave]) delete nuevo[clave]
+    fijarPend(nuevo)
     if (d > 0) navigator.vibrate?.(15)
+    enviar()
   }
 
   const resumen = () => {
@@ -120,7 +154,8 @@ export default function App() {
       <header>
         <div className="tag">Camino vecinal</div>
         <h1>Conteo de carros</h1>
-        <p>Toca <b>+1</b> cada vez que pase un carro. Se guarda solo.</p>
+        <p>Toca <b>+1</b> cada vez que pase un carro. Todos ven lo mismo, en vivo.</p>
+        <p className={enLinea ? 'est ok' : 'est mal'}>{enLinea ? 'En vivo' : 'Sin internet: se enviará al volver'}{Object.keys(pend).length ? ' (enviando…)' : ''}</p>
       </header>
 
       <nav className="sess" aria-label="Horarios">

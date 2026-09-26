@@ -81,3 +81,8 @@ header p b { color: var(--amarillo); }
   .plus { width: 64px; }
   .minus { width: 40px; }
 }
+
+.est { font: 700 12px/1 var(--texto) !important; letter-spacing: .1em; text-transform: uppercase; margin: 0 !important; }
+.est::before { content: ''; display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 7px; background: #3ddc84; vertical-align: 0; }
+.est.mal::before { background: var(--rojo); }
+.est.mal { color: #ffb3a6 !important; }
