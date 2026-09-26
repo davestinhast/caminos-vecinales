@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { VehIcon } from './art'
+import { AYUDA, VehIcon } from './art'
 
 const VEH = ['Auto', 'Camioneta', 'Combi', 'Micro', 'Bus', 'Camión chico', 'Camión grande']
 
@@ -84,6 +84,7 @@ export default function App() {
   return (
     <div className="app">
       <header>
+        <div className="tag">Camino vecinal</div>
         <h1>Conteo de carros</h1>
         <p>Toca <b>+1</b> cada vez que pase un carro. Se guarda solo.</p>
       </header>
@@ -106,10 +107,12 @@ export default function App() {
         {VEH.map((v, i) => (
           <div key={v} className="row">
             <span className="ic"><VehIcon i={i} /></span>
-            <span className="nm">{v}</span>
-            <button className="minus" onClick={() => cambiar(i, -1)} aria-label={`Quitar uno a ${v}`}>−1</button>
-            <b className="n">{cur[i]}</b>
-            <button className="plus" onClick={() => cambiar(i, 1)} aria-label={`Sumar uno a ${v}`}>+1</button>
+            <span className="nm">{v}<small>{AYUDA[i]}</small></span>
+            <div className="ctrl">
+              <button className="minus" onClick={() => cambiar(i, -1)} aria-label={`Quitar uno a ${v}`}>−1</button>
+              <b className="n">{cur[i]}</b>
+              <button className="plus" onClick={() => cambiar(i, 1)} aria-label={`Sumar uno a ${v}`}>+1</button>
+            </div>
           </div>
         ))}
       </main>
