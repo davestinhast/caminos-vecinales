@@ -31,7 +31,35 @@ function leer(): Datos {
   return {}
 }
 
+const total = (d: Datos) => Object.values(d).reduce((a, v) => a + sum(v), 0)
+
+function idb(): Promise<IDBDatabase> {
+  return new Promise((ok, mal) => {
+    const q = indexedDB.open('cv-conteo-db', 1)
+    q.onupgradeneeded = () => q.result.createObjectStore('k')
+    q.onsuccess = () => ok(q.result)
+    q.onerror = () => mal(q.error)
+  })
+}
+async function idbGuardar(d: Datos) {
+  try {
+    const db = await idb()
+    db.transaction('k', 'readwrite').objectStore('k').put(d, 'datos')
+  } catch { /* */ }
+}
+async function idbLeer(): Promise<Datos | null> {
+  try {
+    const db = await idb()
+    return await new Promise((ok) => {
+      const q = db.transaction('k').objectStore('k').get('datos')
+      q.onsuccess = () => ok((q.result as Datos) ?? null)
+      q.onerror = () => ok(null)
+    })
+  } catch { return null }
+}
+
 function guardar(d: Datos) {
+  idbGuardar(d)
   try {
     const s = JSON.stringify(d)
     localStorage.setItem(KEY + '-respaldo', localStorage.getItem(KEY) ?? s)
@@ -51,6 +79,10 @@ export default function App() {
   const [aviso, setAviso] = useState('')
   useEffect(() => {
     try { navigator.storage?.persist?.() } catch { /* */ }
+    // recuperar la copia de IndexedDB si tiene más conteo que la principal
+    idbLeer().then((c) => {
+      if (c && total(c) > total(leer())) { setDatos(c); guardar(c) }
+    })
   }, [])
 
   const ses = SESIONES.find((x) => x.id === id)!
@@ -63,13 +95,15 @@ export default function App() {
     if (d > 0) navigator.vibrate?.(15)
   }
 
-  const resumen = () =>
-    'Conteo de carros\n' +
-    SESIONES.map((s) => {
-      const det = VEH.map((v, i) => (datos[s.id]?.[i] ? `${v} ${datos[s.id][i]}` : '')).filter(Boolean).join(', ')
-      return `${s.dia} ${corta(s.fecha)} ${s.hora}: ${sum(datos[s.id])}${det ? ` (${det})` : ''}`
-    }).join('\n') +
-    `\nTOTAL: ${SESIONES.reduce((a, s) => a + sum(datos[s.id]), 0)}`
+  const resumen = () => {
+    const linea = (arr: number[] = []) => VEH.map((v, k) => `${v}: ${arr[k] ?? 0}`).join('\n')
+    const hechas = SESIONES.filter((x) => sum(datos[x.id]) > 0)
+    const porTipo = VEH.map((_, k) => SESIONES.reduce((a, x) => a + (datos[x.id]?.[k] ?? 0), 0))
+    const dias = hechas
+      .map((x) => `${x.dia} ${corta(x.fecha)}, ${x.hora} (${x.quien})\n${linea(datos[x.id])}\nTotal del día: ${sum(datos[x.id])}`)
+      .join('\n\n')
+    return `CONTEO DE CARROS\n\n${dias}${hechas.length ? '\n\n' : ''}TOTAL DE TODOS LOS DÍAS\n${linea(porTipo)}\nTOTAL: ${sum(porTipo)}`
+  }
 
   const copiar = async () => {
     try {
