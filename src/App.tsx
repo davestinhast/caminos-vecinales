@@ -4,10 +4,10 @@ import { AYUDA, VehIcon } from './art'
 const VEH = ['Auto', 'Camioneta', 'Combi', 'Micro', 'Bus', 'Camión chico', 'Camión grande', 'Semi tráiler', 'Tráiler']
 
 const SESIONES = [
-  { id: 's1', fecha: '2026-09-26', dia: 'Sáb', hora: '10:00 a 10:30 pm', quien: 'Fabrizio y Néstor' },
+  { id: 's1', fecha: '2026-09-26', dia: 'Sáb', hora: '10:00 a 10:30 am', quien: 'Fabrizio y Néstor' },
   { id: 's2', fecha: '2026-09-29', dia: 'Mar', hora: '3:00 a 3:30 pm', quien: 'Alessandra y Alondra' },
   { id: 's3', fecha: '2026-10-01', dia: 'Jue', hora: '4:30 a 5:00 pm', quien: 'Gustavo' },
-  { id: 's4', fecha: '2026-10-03', dia: 'Sáb', hora: '10:00 a 10:30 pm', quien: 'Fabrizio y Néstor' },
+  { id: 's4', fecha: '2026-10-03', dia: 'Sáb', hora: '10:00 a 10:30 am', quien: 'Fabrizio y Néstor' },
   { id: 's5', fecha: '2026-10-06', dia: 'Mar', hora: '3:00 a 3:30 pm', quien: 'Alessandra y Alondra' },
   { id: 's6', fecha: '2026-10-08', dia: 'Jue', hora: '4:30 a 5:00 pm', quien: 'Gustavo' },
 ]
