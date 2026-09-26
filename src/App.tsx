@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { AYUDA, VehIcon } from './art'
+import Ruta from './Ruta'
 
 const VEH = ['Auto', 'Camioneta', 'Combi', 'Micro', 'Bus', 'Camión chico', 'Camión grande', 'Semi tráiler', 'Tráiler']
 
@@ -59,6 +60,7 @@ export default function App() {
   const hoy = hoyStr()
   const [id, setId] = useState((SESIONES.find((x) => x.fecha >= hoy) ?? SESIONES[SESIONES.length - 1]).id)
   const [aviso, setAviso] = useState('')
+  const [vista, setVista] = useState<'conteo' | 'ruta'>(location.hash === '#ruta' ? 'ruta' : 'conteo')
 
   const fijarSrv = (d: Datos) => { srvRef.current = d; setSrv(d); escribir(KEY, d) }
   const fijarPend = (p: Pend) => { pendRef.current = p; setPend(p); escribir(KEYP, p) }
@@ -158,6 +160,15 @@ export default function App() {
         <p className={enLinea ? 'est ok' : 'est mal'}>{enLinea ? 'En vivo' : 'Sin internet: se enviará al volver'}{Object.keys(pend).length ? ' (enviando…)' : ''}</p>
       </header>
 
+      <div className="vistas" role="tablist">
+        <button className={vista === 'conteo' ? 'on' : ''} onClick={() => setVista('conteo')}>Conteo</button>
+        <button className={vista === 'ruta' ? 'on' : ''} onClick={() => setVista('ruta')}>Ruta</button>
+      </div>
+
+      {vista === 'ruta' ? (
+        <Ruta />
+      ) : (
+        <>
       <nav className="sess" aria-label="Horarios">
         {SESIONES.map((x) => (
           <button key={x.id} className={x.id === id ? 'on' : ''} onClick={() => setId(x.id)}>
@@ -191,6 +202,8 @@ export default function App() {
         <div><span>Total</span><b>{SESIONES.reduce((a, s) => a + sum(datos[s.id]), 0)}</b></div>
         <button onClick={copiar}>Copiar</button>
       </footer>
+        </>
+      )}
       {aviso && <div className="toast">{aviso}</div>}
     </div>
   )

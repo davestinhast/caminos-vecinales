@@ -86,3 +86,20 @@ header p b { color: var(--amarillo); }
 .est::before { content: ''; display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 7px; background: #3ddc84; vertical-align: 0; }
 .est.mal::before { background: var(--rojo); }
 .est.mal { color: #ffb3a6 !important; }
+
+.vistas { display: flex; border-bottom: 2px solid var(--tinta); }
+.vistas button { flex: 1; border: 0; background: var(--papel); padding: 12px 0 10px; font: 700 20px/1 var(--titulo); text-transform: uppercase; letter-spacing: .05em; }
+.vistas button.on { background: var(--amarillo); box-shadow: inset 0 -4px 0 var(--tinta); }
+
+.ruta-info { padding: 12px 16px 10px; display: flex; flex-direction: column; gap: 2px; }
+.ruta-info b { font: 700 24px/1 var(--titulo); text-transform: uppercase; }
+.ruta-info span { color: var(--suave); font-size: 14px; }
+.mapa { height: 52vh; min-height: 320px; border-top: 2px solid var(--tinta); border-bottom: 2px solid var(--tinta); z-index: 0; }
+.pin span { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: #fff; border: 3px solid var(--tinta); font: 700 15px/1 var(--titulo); }
+.pin span.ini { background: #3ddc84; } .pin span.fin { background: var(--rojo); color: #fff; }
+.ruta-datos { display: flex; align-items: center; gap: 22px; padding: 10px 16px; border-bottom: 1px solid var(--linea); }
+.ruta-datos div { display: flex; flex-direction: column; } .ruta-datos span { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--suave); }
+.ruta-datos b { font: 700 32px/1 var(--titulo); } .ruta-datos .quien { margin-left: auto; font-size: 13px; color: var(--suave); text-align: right; max-width: 130px; }
+.ruta-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 12px 16px calc(24px + env(safe-area-inset-bottom)); }
+.ruta-btns button { border: 2px solid var(--tinta); background: #fff; border-radius: 4px; padding: 12px 8px; font: 700 16px/1.1 var(--titulo); text-transform: uppercase; letter-spacing: .04em; }
+.ruta-btns button:disabled { opacity: .4; } .ruta-btns .peligro { color: var(--rojo); border-color: var(--rojo); }
