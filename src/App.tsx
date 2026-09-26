@@ -1,15 +1,15 @@
 import { useEffect, useState } from 'react'
 import { VehIcon } from './art'
 
-const VEH = ['Auto', 'Camioneta', 'Combi / Rural', 'Micro', 'Bus grande', 'Camión 2 ejes', 'Camión 3 ejes']
+const VEH = ['Auto', 'Camioneta', 'Combi', 'Micro', 'Bus', 'Camión chico', 'Camión grande']
 
 const SESIONES = [
-  { id: 's1', fecha: '2026-09-26', dia: 'Sáb', hora: '10:00 – 10:30 pm', quien: 'Néstor y Fabricio' },
-  { id: 's2', fecha: '2026-09-29', dia: 'Mar', hora: '3:00 – 3:30 pm', quien: 'Alessandra y Néstor' },
-  { id: 's3', fecha: '2026-10-01', dia: 'Jue', hora: '4:30 – 5:00 pm', quien: 'Gustavo' },
-  { id: 's4', fecha: '2026-10-03', dia: 'Sáb', hora: '10:00 – 10:30 pm', quien: 'Néstor y Fabricio' },
-  { id: 's5', fecha: '2026-10-06', dia: 'Mar', hora: '3:00 – 3:30 pm', quien: 'Alessandra y Néstor' },
-  { id: 's6', fecha: '2026-10-08', dia: 'Jue', hora: '4:30 – 5:00 pm', quien: 'Gustavo' },
+  { id: 's1', fecha: '2026-09-26', dia: 'Sáb', hora: '10:00 a 10:30 pm', quien: 'Néstor y Fabricio' },
+  { id: 's2', fecha: '2026-09-29', dia: 'Mar', hora: '3:00 a 3:30 pm', quien: 'Alessandra y Néstor' },
+  { id: 's3', fecha: '2026-10-01', dia: 'Jue', hora: '4:30 a 5:00 pm', quien: 'Gustavo' },
+  { id: 's4', fecha: '2026-10-03', dia: 'Sáb', hora: '10:00 a 10:30 pm', quien: 'Néstor y Fabricio' },
+  { id: 's5', fecha: '2026-10-06', dia: 'Mar', hora: '3:00 a 3:30 pm', quien: 'Alessandra y Néstor' },
+  { id: 's6', fecha: '2026-10-08', dia: 'Jue', hora: '4:30 a 5:00 pm', quien: 'Gustavo' },
 ]
 const MES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
 const corta = (f: string) => {
@@ -74,7 +74,7 @@ export default function App() {
   const copiar = async () => {
     try {
       await navigator.clipboard.writeText(resumen())
-      setAviso('Copiado. Pégalo en WhatsApp.')
+      setAviso('Copiado. Pégalo en WhatsApp')
     } catch {
       setAviso('No se pudo copiar')
     }
@@ -85,20 +85,20 @@ export default function App() {
     <div className="app">
       <header>
         <h1>Conteo de carros</h1>
-        <p>Toca <b>+1</b> por cada vehículo. Se guarda solo.</p>
+        <p>Toca <b>+1</b> cada vez que pase un carro. Se guarda solo.</p>
       </header>
 
       <nav className="sess" aria-label="Horarios">
         {SESIONES.map((x) => (
           <button key={x.id} className={x.id === id ? 'on' : ''} onClick={() => setId(x.id)}>
             <b>{x.dia} {corta(x.fecha)}</b>
-            <span>{sum(datos[x.id])} carros{x.fecha === hoy ? ' · HOY' : ''}</span>
+            <span>{sum(datos[x.id])} carros{x.fecha === hoy ? ' (hoy)' : ''}</span>
           </button>
         ))}
       </nav>
 
       <div className="info">
-        <b>{ses.dia} {corta(ses.fecha)} · {ses.hora}</b>
+        <b>{ses.dia} {corta(ses.fecha)}, {ses.hora}</b>
         <span>{ses.quien}</span>
       </div>
 
@@ -115,9 +115,9 @@ export default function App() {
       </main>
 
       <footer className="bar">
-        <div><span>Este horario</span><b>{sum(cur)}</b></div>
-        <div><span>Total 6 visitas</span><b>{SESIONES.reduce((a, s) => a + sum(datos[s.id]), 0)}</b></div>
-        <button onClick={copiar}>Copiar resumen</button>
+        <div><span>Este día</span><b>{sum(cur)}</b></div>
+        <div><span>Total</span><b>{SESIONES.reduce((a, s) => a + sum(datos[s.id]), 0)}</b></div>
+        <button onClick={copiar}>Copiar</button>
       </footer>
       {aviso && <div className="toast">{aviso}</div>}
     </div>
