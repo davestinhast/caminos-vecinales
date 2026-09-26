@@ -4,11 +4,11 @@ import { AYUDA, VehIcon } from './art'
 const VEH = ['Auto', 'Camioneta', 'Combi', 'Micro', 'Bus', 'Camión chico', 'Camión grande']
 
 const SESIONES = [
-  { id: 's1', fecha: '2026-09-26', dia: 'Sáb', hora: '10:00 a 10:30 pm', quien: 'Néstor y Fabricio' },
-  { id: 's2', fecha: '2026-09-29', dia: 'Mar', hora: '3:00 a 3:30 pm', quien: 'Alessandra y Néstor' },
+  { id: 's1', fecha: '2026-09-26', dia: 'Sáb', hora: '10:00 a 10:30 pm', quien: 'Néstor y Fabrizio' },
+  { id: 's2', fecha: '2026-09-29', dia: 'Mar', hora: '3:00 a 3:30 pm', quien: 'Alondra y Néstor' },
   { id: 's3', fecha: '2026-10-01', dia: 'Jue', hora: '4:30 a 5:00 pm', quien: 'Gustavo' },
-  { id: 's4', fecha: '2026-10-03', dia: 'Sáb', hora: '10:00 a 10:30 pm', quien: 'Néstor y Fabricio' },
-  { id: 's5', fecha: '2026-10-06', dia: 'Mar', hora: '3:00 a 3:30 pm', quien: 'Alessandra y Néstor' },
+  { id: 's4', fecha: '2026-10-03', dia: 'Sáb', hora: '10:00 a 10:30 pm', quien: 'Néstor y Fabrizio' },
+  { id: 's5', fecha: '2026-10-06', dia: 'Mar', hora: '3:00 a 3:30 pm', quien: 'Alondra y Néstor' },
   { id: 's6', fecha: '2026-10-08', dia: 'Jue', hora: '4:30 a 5:00 pm', quien: 'Gustavo' },
 ]
 const MES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
