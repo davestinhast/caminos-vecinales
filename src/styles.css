@@ -108,3 +108,17 @@ header p b { color: var(--amarillo); }
 .cuad span { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 4px; background: var(--tinta); color: var(--amarillo); border: 2px solid var(--amarillo); font: 700 14px/1 var(--titulo); }
 .paso { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 16px; font-size: 14px; color: var(--suave); border-bottom: 1px solid var(--linea); }
 .paso select { font: inherit; padding: 8px; border: 2px solid var(--tinta); border-radius: 4px; background: #fff; }
+
+.guia { padding: 14px 16px; background: var(--amarillo); border-bottom: 2px solid var(--tinta); display: flex; flex-direction: column; gap: 4px; }
+.guia.ok { background: #d9f2df; }
+.guia b { font: 700 24px/1.05 var(--titulo); text-transform: uppercase; }
+.guia span { font-size: 15px; }
+.si-no { display: grid; grid-template-columns: 1.2fr 1fr; gap: 8px; margin-top: 8px; }
+.si-no button { border: 2px solid var(--tinta); border-radius: 4px; background: #fff; padding: 14px 8px; font: 700 18px/1.1 var(--titulo); text-transform: uppercase; }
+.si-no button.si { background: var(--tinta); color: var(--amarillo); }
+.si-no button:disabled { opacity: .6; }
+.pin span.prueba { opacity: .75; border-style: dashed; animation: lat 1s infinite alternate; }
+@keyframes lat { to { transform: scale(1.15); } }
+.z-bajo .cuad span:not(.c5) { display: none; }
+.ruta-btns .grande { grid-column: 1 / -1; background: var(--tinta); color: var(--amarillo); }
+.mapa { height: 50vh; }

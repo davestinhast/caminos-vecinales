@@ -21,13 +21,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const db = redis()
     if (req.method === 'GET') {
       const p = await db.get<[number, number][]>(CLAVE)
-      return res.status(200).json({ puntos: p ?? null })
+      const otra = (await db.get<boolean>(CLAVE + '-otra')) ?? false
+      return res.status(200).json({ puntos: p ?? null, otra })
     }
     if (req.method === 'POST') {
-      const { puntos } = req.body ?? {}
+      const { puntos, otra } = req.body ?? {}
       if (!ok(puntos)) return res.status(400).json({ error: 'puntos inválidos' })
       await db.set(CLAVE, puntos)
-      return res.status(200).json({ puntos })
+      await db.set(CLAVE + '-otra', otra === true)
+      return res.status(200).json({ puntos, otra: otra === true })
     }
     return res.status(405).json({ error: 'método no permitido' })
   } catch (e) {
