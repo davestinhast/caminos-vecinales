@@ -2,7 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { Redis } from '@upstash/redis'
 
 const SESIONES = ['s1', 's2', 's3', 's4', 's5', 's6']
-const TIPOS = 7
+const TIPOS = 9
 const HASH = 'conteo-carros'
 
 function redis() {

@@ -6,6 +6,8 @@ export const AYUDA = [
   'Bus largo de pasajeros',
   '2 ejes: 1 adelante, 1 atrás',
   '3 ejes: 1 adelante, 2 atrás juntos',
+  'Cabina que jala una caja larga de 1 pieza',
+  'Camión que jala otro remolque aparte',
 ]
 
 const Rueda = ({ x }: { x: number }) => (
@@ -87,6 +89,27 @@ export function VehIcon({ i }: { i: number }) {
       <Rueda x={22} />
       <Rueda x={38} />
       <Rueda x={80} />
+    </>,
+    // Semi tráiler
+    <>
+      <path d="M2 44 v-18 h10 l8 -8 h12 v26z" fill="#c0392b" stroke="#123" strokeWidth="1" />
+      <path d="M22 20 h9 v8 h-15z" fill="#cfe8f7" stroke="#345" strokeWidth=".8" />
+      <path d="M32 44 v-30 h86 v30z" fill="#ecf0f1" stroke="#123" strokeWidth="1" />
+      <Rueda x={14} />
+      <Rueda x={36} />
+      <Rueda x={96} />
+      <Rueda x={108} />
+    </>,
+    // Tráiler (camión con remolque)
+    <>
+      <path d="M2 44 v-20 h8 l6 -8 h10 v28z" fill="#2980b9" stroke="#123" strokeWidth="1" />
+      <path d="M26 44 v-24 h34 v24z" fill="#95a5a6" stroke="#123" strokeWidth="1" />
+      <line x1="60" y1="38" x2="68" y2="38" stroke="#123" strokeWidth="2" />
+      <path d="M68 44 v-24 h50 v24z" fill="#bdc3c7" stroke="#123" strokeWidth="1" />
+      <Rueda x={14} />
+      <Rueda x={46} />
+      <Rueda x={82} />
+      <Rueda x={104} />
     </>,
   ]
   return (

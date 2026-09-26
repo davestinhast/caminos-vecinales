@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { AYUDA, VehIcon } from './art'
 
-const VEH = ['Auto', 'Camioneta', 'Combi', 'Micro', 'Bus', 'Camión chico', 'Camión grande']
+const VEH = ['Auto', 'Camioneta', 'Combi', 'Micro', 'Bus', 'Camión chico', 'Camión grande', 'Semi tráiler', 'Tráiler']
 
 const SESIONES = [
   { id: 's1', fecha: '2026-09-26', dia: 'Sáb', hora: '10:00 a 10:30 pm', quien: 'Fabrizio y Néstor' },
