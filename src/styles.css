@@ -37,3 +37,13 @@ table.sm { font-size:11px; } table.tot-row { margin-top:6px; } footer { text-ali
 .cnt button { width:28px; height:28px; border-radius:8px; border:1px solid var(--line); background:#fff; font-size:16px; cursor:pointer; line-height:1; touch-action:manipulation; }
 .cnt button.plus { background:var(--pri); color:#fff; border-color:var(--pri); } .cnt button:active { transform:scale(.92); }
 table.sm .cnt button { width:22px; height:22px; font-size:13px; } table.sm .cnt b { min-width:18px; }
+
+.sess { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:8px; }
+.sess button { text-align:left; border:1px solid var(--line); background:#fff; border-radius:12px; padding:10px; display:flex; flex-direction:column; gap:2px; font:inherit; cursor:pointer; }
+.sess button.on { border-color:var(--pri); background:var(--pri2); box-shadow:0 0 0 2px var(--pri) inset; }
+.sess span { font-size:12px; color:var(--mut); } .sess em { font-style:normal; font-size:12px; color:var(--pri); font-weight:600; }
+.big { display:grid; gap:8px; } .bigrow { display:flex; align-items:center; gap:10px; background:#f7f9fb; border-radius:12px; padding:8px 12px; }
+.bigrow .nm { flex:1; font-weight:600; } .bigrow b { font-size:28px; min-width:52px; text-align:center; }
+.bigrow button { border:0; border-radius:12px; font-size:20px; font-weight:700; cursor:pointer; touch-action:manipulation; }
+.bigrow .plus1 { background:var(--pri); color:#fff; width:96px; height:56px; } .bigrow .minus { background:#e6eaef; width:56px; height:56px; }
+.bigrow button:active { transform:scale(.95); } .tot1 { font-size:16px; } button.warn { color:#b3261e; border:1px solid var(--line); background:#fff; border-radius:20px; padding:8px 14px; cursor:pointer; font:inherit; }

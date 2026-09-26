@@ -42,7 +42,7 @@ const ANCHO = [
   ['Afirmada (AF) — mejoramiento', '150 – 200 veh./día', '3.50 - 5.50', 125000, 145000],
 ] as const
 
-const TABS = ['Inicio', 'Demanda', 'Población', 'Oferta', 'Balance', 'Costos', 'Precios sociales', 'Evaluación', 'Anexos'] as const
+const TABS = ['Inicio', 'Conteo', 'Tráfico', 'Población', 'Camino actual', 'Propuesta', 'Costos', 'Costos sociales', 'Resultado', 'Anexos'] as const
 type Tab = (typeof TABS)[number]
 
 function load<T>(k: string, d: T): T {
@@ -107,38 +107,39 @@ export default function App() {
         {TABS.map((t) => <button key={t} className={t === tab ? 'on' : ''} onClick={() => setTab(t)}>{t}</button>)}
       </nav>
       <div className="kpis">
-        <div><span>IMD actual</span><b>{r.imdTot}</b></div>
-        <div><span>Inversión total</span><b>{S(r.inversion)}</b></div>
-        <div><span>VACT (precios sociales)</span><b>{S(r.vact)}</b></div>
-        <div><span>C/E</span><b>S/ {fmt(r.ce, 2)}</b> <small>US$ {fmt(r.ceUsd, 2)} / hab.</small></div>
+        <div><span>Vehículos por día</span><b>{r.imdTot}</b></div>
+        <div><span>Inversión</span><b>{S(r.inversion)}</b></div>
+        <div><span>Costo total (valor de hoy)</span><b>{S(r.vact)}</b></div>
+        <div><span>Costo por persona</span><b>S/ {fmt(r.ce, 2)}</b> <small>US$ {fmt(r.ceUsd, 2)} / hab.</small></div>
       </div>
 
       <main>
         {tab === 'Inicio' && (
           <section className="card">
-            <h2>Presentación del aplicativo</h2>
-            <p>Herramienta que orienta de forma práctica la formulación y evaluación de Proyectos de Inversión Pública (PIP) de caminos vecinales con la metodología <b>costo-efectividad</b>. Utiliza los parámetros de los Anexos SNIP 09 y SNIP 10, datos referenciales y tiene fines didácticos.</p>
-            <p>Incluye anexos: factores de corrección estacional (ligeros y pesados), PBI, tasa de crecimiento poblacional, ancho de calzada según tráfico, estructura funcional programática, formatos de tráfico y glosario. En el conteo de tránsito usa los botones <b>+</b> / <b>−</b> para subir el contador de uno en uno. Los <span className="ley">campos amarillos</span> son datos a ingresar; todo lo demás se calcula automáticamente. Sus datos se guardan en este navegador.</p>
-            <h3>1. Generalidades</h3>
+            <h2>¿Para qué sirve?</h2>
+            <p>Sirve para saber <b>cuánto cuesta</b> arreglar un camino vecinal y <b>a cuánta gente ayuda</b>. Es la misma hoja de Excel de la guía, pero en la web.</p>
+            <p>Cómo usarla: 1) cuenten los carros en la pestaña <b>Conteo</b>, 2) revisen las demás pestañas, 3) miren el <b>Resultado</b>. Los <span className="ley">campos amarillos</span> se llenan a mano; lo demás se calcula solo. Todo se guarda en este navegador.</p>
+            <h3>Datos del proyecto</h3>
             <div className="grid2">
               <label>Nombre del proyecto<Txt v={p.nombre} on={(v) => set('nombre', v)} /></label>
               <label>Departamento<Txt v={p.depto} on={(v) => set('depto', v)} /></label>
               <label>Provincia<Txt v={p.prov} on={(v) => set('prov', v)} /></label>
               <label>Distrito<Txt v={p.dist} on={(v) => set('dist', v)} /></label>
-              <label>Zona geográfica
+              <label>Zona
                 <select className="in" value={p.zona} onChange={(e) => set('zona', e.target.value)}>{['Costa', 'Sierra', 'Selva'].map((z) => <option key={z}>{z}</option>)}</select>
               </label>
-              <label>Horizonte (años)<Num v={p.horizonte} on={(v) => set('horizonte', Math.min(20, Math.max(2, v || 10)))} step="1" /></label>
+              <label>Duración del análisis (años)<Num v={p.horizonte} on={(v) => set('horizonte', Math.min(20, Math.max(2, v || 10)))} step="1" /></label>
             </div>
             <div className="btns"><button onClick={exportar}>Exportar JSON</button><button onClick={() => window.print()}>Imprimir / PDF</button><button className="warn" onClick={reset}>Restablecer ejemplo</button></div>
           </section>
         )}
 
-        {tab === 'Demanda' && (
+        {tab === 'Conteo' && <Conteo />}
+        {tab === 'Tráfico' && (
           <>
             <section className="card">
-              <h2>1. Determinación del tránsito actual</h2>
-              <h3>i) Conteos de tránsito por día y tipo de vehículo — mes: <select className="in" value={p.mes} onChange={(e) => set('mes', e.target.value)}>{MESES.map((m) => <option key={m}>{m}</option>)}</select></h3>
+              <h2>Tráfico actual</h2>
+              <h3>1) Carros contados por día — mes: <select className="in" value={p.mes} onChange={(e) => set('mes', e.target.value)}>{MESES.map((m) => <option key={m}>{m}</option>)}</select></h3>
               <div className="scroll"><table>
                 <thead><tr><th>Tipo de vehículo</th>{DIAS.map((d) => <th key={d}>{d}</th>)}</tr></thead>
                 <tbody>
@@ -146,27 +147,27 @@ export default function App() {
                   <tr className="tot"><td className="l">TOTAL</td>{r.totDia.map((t, i) => <td key={i}>{t}</td>)}</tr>
                 </tbody>
               </table></div>
-              <p className="note">Conteo de 7 días de 24 horas para proyectos a nivel de perfil.</p>
+              <p className="note">Se necesitan 7 días de conteo.</p>
 
-              <h3>ii) Factores de corrección estacional (peaje cercano, Anexo 3)</h3>
+              <h3>2) Ajuste por época del año (según un peaje cercano)</h3>
               <div className="grid2">
-                <label>Peaje – vehículos ligeros
+                <label>Peaje – autos y camionetas
                   <select className="in" defaultValue="" onChange={(e) => sel('fceLig', ref.fcLig, mesIdx)(e.target.value)}>
                     <option value="">Elegir peaje…</option>{ref.fcLig.filter((f) => f.m[mesIdx]).map((f) => <option key={f.c} value={f.c}>{f.n} ({fmt(f.m[mesIdx]!, 3)})</option>)}
                   </select>
                 </label>
-                <label>Peaje – vehículos pesados
+                <label>Peaje – camiones
                   <select className="in" defaultValue="" onChange={(e) => sel('fcePes', ref.fcPes, mesIdx)(e.target.value)}>
                     <option value="">Elegir peaje…</option>{ref.fcPes.filter((f) => f.m[mesIdx]).map((f) => <option key={f.c} value={f.c}>{f.n} ({fmt(f.m[mesIdx]!, 3)})</option>)}
                   </select>
                 </label>
-                <label>F.C.E. ligeros<Num v={p.fceLig} on={(v) => set('fceLig', v)} /></label>
-                <label>F.C.E. pesados<Num v={p.fcePes} on={(v) => set('fcePes', v)} /></label>
+                <label>Ajuste autos y camionetas<Num v={p.fceLig} on={(v) => set('fceLig', v)} /></label>
+                <label>Ajuste camiones<Num v={p.fcePes} on={(v) => set('fcePes', v)} /></label>
               </div>
 
-              <h3>iii) IMDa = IMDS × FC &nbsp; <small>IMDS = ΣVi / 7</small></h3>
+              <h3>3) Vehículos por día (promedio de la semana × ajuste)</h3>
               <div className="scroll"><table>
-                <thead><tr><th>Tipo</th><th>Total semana</th><th>IMDS</th><th>FC</th><th>IMDa</th></tr></thead>
+                <thead><tr><th>Tipo</th><th>Total semana</th><th>Promedio diario</th><th>Ajuste</th><th>Por día</th></tr></thead>
                 <tbody>
                   {VEH.map((v, i) => <tr key={v}><td className="l">{v}</td><td>{r.tot[i]}</td><td>{fmt(r.imds[i], 2)}</td><td>{fmt(r.fc[i], 4)}</td><td><b>{r.imda[i]}</b></td></tr>)}
                   <tr className="tot"><td className="l">TOTAL</td><td>{r.tot.reduce((a, b) => a + b, 0)}</td><td>{fmt(r.imds.reduce((a, b) => a + b, 0), 2)}</td><td></td><td>{r.imdTot}</td></tr>
@@ -175,28 +176,28 @@ export default function App() {
             </section>
 
             <section className="card">
-              <h2>2. Análisis de la demanda</h2>
-              <h3>2.1 Demanda actual — distribución</h3>
+              <h2>Tráfico futuro</h2>
+              <h3>Tráfico de hoy</h3>
               <div className="row">
                 <Donut parts={VEH.map((v, i) => ({ name: v, v: r.imda[i], color: ['#2f80ed', '#27ae60', '#f2994a', '#9b51e0', '#eb5757', '#56ccf2', '#828282'][i] })).filter((x) => x.v > 0)} />
                 <table><thead><tr><th>Vehículo</th><th>IMD</th><th>%</th></tr></thead><tbody>
                   {VEH.map((v, i) => <tr key={v}><td className="l">{v}</td><td>{r.imda[i]}</td><td>{fmt(r.imdTot ? (r.imda[i] / r.imdTot) * 100 : 0, 1)}</td></tr>)}
                 </tbody></table>
               </div>
-              <h3>2.2 Demanda proyectada — Tn = T0 (1 + r)ⁿ</h3>
+              <h3>Cuánto crecerá cada año</h3>
               <div className="grid2">
-                <label>rvp – crecimiento población (%) (pasajeros){tcpDep && <small> Sugerido {p.depto}: {tcpDep.v[3]}%</small>}<Num v={p.rvp} on={(v) => set('rvp', v)} /></label>
-                <label>rvc – crecimiento PBI regional (%) (carga){pbiDep && <small> Sugerido {p.depto}: {pbiDep.v}%</small>}<Num v={p.rvc} on={(v) => set('rvc', v)} /></label>
+                <label>Crecimiento de pasajeros (% al año, como la población){tcpDep && <small> Sugerido {p.depto}: {tcpDep.v[3]}%</small>}<Num v={p.rvp} on={(v) => set('rvp', v)} /></label>
+                <label>Crecimiento de carga (% al año, como la economía){pbiDep && <small> Sugerido {p.depto}: {pbiDep.v}%</small>}<Num v={p.rvc} on={(v) => set('rvc', v)} /></label>
               </div>
-              <h3>Proyección sin proyecto</h3>
+              <h3>Si no se hace la obra</h3>
               <ProyTabla labels={yl} filas={VEH.map((v, i) => [v, r.proy[i]] as [string, number[]])} total={['Tráfico normal', r.normal]} />
-              <h3>2.3 Con proyecto — tráfico generado</h3>
+              <h3>Si se hace la obra (llegan más carros)</h3>
               <div className="grid2">
-                <label>% tráfico generado (mejoramiento)<Num v={p.pctGenerado} on={(v) => set('pctGenerado', v)} /></label>
-                <label>Se genera desde el año<Num v={p.anioGenera} on={(v) => set('anioGenera', v)} step="1" /></label>
+                <label>% de carros nuevos por la obra<Num v={p.pctGenerado} on={(v) => set('pctGenerado', v)} /></label>
+                <label>Empiezan a llegar desde el año<Num v={p.anioGenera} on={(v) => set('anioGenera', v)} step="1" /></label>
               </div>
               <ProyTabla labels={yl} filas={VEH.map((v, i) => [v, r.gen[i]] as [string, number[]])} total={['Tráfico generado', r.generado]} />
-              <div className="scroll"><table className="tot-row"><tbody><tr><td className="l">IMD TOTAL con proyecto</td>{r.imdCon.map((v, i) => <td key={i}><b>{v}</b></td>)}</tr></tbody></table></div>
+              <div className="scroll"><table className="tot-row"><tbody><tr><td className="l">TOTAL con obra</td>{r.imdCon.map((v, i) => <td key={i}><b>{v}</b></td>)}</tr></tbody></table></div>
               <LineChart labels={yl} series={[{ name: 'Sin proyecto', color: '#828282', data: r.normal }, { name: 'Con proyecto', color: '#2f80ed', data: r.imdCon }]} />
             </section>
           </>
@@ -204,44 +205,44 @@ export default function App() {
 
         {tab === 'Población' && (
           <section className="card">
-            <h2>Proyecciones de población</h2>
+            <h2>Población</h2>
             <div className="grid2">
-              <label>Año censo 1<Num v={p.censoA} on={(v) => set('censoA', v)} step="1" /></label>
-              <label>Población censo 1<Num v={p.poblA} on={(v) => set('poblA', v)} step="1" /></label>
-              <label>Año censo 2<Num v={p.censoB} on={(v) => set('censoB', v)} step="1" /></label>
-              <label>Población censo 2<Num v={p.poblB} on={(v) => set('poblB', v)} step="1" /></label>
-              <label>Años transcurridos censo 2 → año 0<Num v={p.anioBase} on={(v) => set('anioBase', v)} step="1" /></label>
+              <label>Año del censo 1<Num v={p.censoA} on={(v) => set('censoA', v)} step="1" /></label>
+              <label>Habitantes censo 1<Num v={p.poblA} on={(v) => set('poblA', v)} step="1" /></label>
+              <label>Año del censo 2<Num v={p.censoB} on={(v) => set('censoB', v)} step="1" /></label>
+              <label>Habitantes censo 2<Num v={p.poblB} on={(v) => set('poblB', v)} step="1" /></label>
+              <label>Años desde el censo 2 hasta hoy<Num v={p.anioBase} on={(v) => set('anioBase', v)} step="1" /></label>
             </div>
-            <p>Tasa intercensal calculada: <b>{fmt(r.tasaCenso, 2)}%</b> anual. Tasa usada en la proyección (rvp): <b>{p.rvp}%</b>. Población beneficiaria (promedio años 1–{N}): <b>{fmt(r.poblProm, 1)}</b>.</p>
+            <p>Crecimiento entre censos: <b>{fmt(r.tasaCenso, 2)}%</b> anual. Crecimiento usado: <b>{p.rvp}%</b>. Gente beneficiada (promedio): <b>{fmt(r.poblProm, 1)}</b>.</p>
             <BarChart labels={yl} data={r.pobl} color="#27ae60" />
             <div className="scroll"><table><thead><tr><th>Año</th>{yl.map((y) => <th key={y}>{y}</th>)}</tr></thead><tbody><tr><td className="l">Población</td>{r.pobl.map((v, i) => <td key={i}>{fmt(v)}</td>)}</tr></tbody></table></div>
           </section>
         )}
 
-        {tab === 'Oferta' && <ParesCard titulo="3. Análisis de oferta — situación actual (visita de campo)" datos={oferta} on={setOferta} fuente="Fuente: Ministerio de Transportes y Comunicaciones – MTC" />}
-        {tab === 'Balance' && (
+        {tab === 'Camino actual' && <ParesCard titulo="Cómo está el camino hoy (visita de campo)" datos={oferta} on={setOferta} fuente="Fuente: Ministerio de Transportes y Comunicaciones – MTC" />}
+        {tab === 'Propuesta' && (
           <>
-            <ParesCard titulo="4. Balance oferta – demanda — propuesta técnica de la alternativa" datos={balance} on={setBalance} />
-            <section className="card"><h3>Sección típica propuesta</h3><RoadSection ancho={parseFloat(balance[4][1]) || 4} berma={parseFloat(balance[5][1]) || 0.6} /></section>
+            <ParesCard titulo="Qué se propone hacer" datos={balance} on={setBalance} />
+            <section className="card"><h3>Dibujo del camino propuesto</h3><RoadSection ancho={parseFloat(balance[4][1]) || 4} berma={parseFloat(balance[5][1]) || 0.6} /></section>
           </>
         )}
 
         {tab === 'Costos' && (
           <section className="card">
-            <h2>Costos en la situación «Con proyecto»</h2>
-            <h3>Presupuesto de obra de la alternativa (S/)</h3>
+            <h2>Costos</h2>
+            <h3>Presupuesto de la obra (S/)</h3>
             <div className="scroll"><table className="w">
               <tbody>
                 {PARTIDAS.map((n, i) => <tr key={n}><td className="l">{n}</td><td></td><td><Num v={p.costos[i]} on={(v) => set('costos', p.costos.map((c, x) => (x === i ? v || 0 : c)))} w={140} /></td></tr>)}
-                <tr className="tot"><td className="l">Costos directos</td><td></td><td>{S(r.cd)}</td></tr>
+                <tr className="tot"><td className="l">Costo directo total</td><td></td><td>{S(r.cd)}</td></tr>
                 <tr><td className="l">Gastos generales</td><td><Num v={p.gg} on={(v) => set('gg', v)} w={70} step="0.01" /></td><td>{S(r.gg)}</td></tr>
                 <tr><td className="l">Utilidad</td><td><Num v={p.util} on={(v) => set('util', v)} w={70} step="0.01" /></td><td>{S(r.ut)}</td></tr>
-                <tr className="tot"><td className="l">Sub total general</td><td></td><td>{S(r.sub)}</td></tr>
+                <tr className="tot"><td className="l">Subtotal</td><td></td><td>{S(r.sub)}</td></tr>
                 <tr><td className="l">IGV</td><td><Num v={p.igv} on={(v) => set('igv', v)} w={70} step="0.01" /></td><td>{S(r.igv)}</td></tr>
                 <tr className="tot"><td className="l">Presupuesto de obra</td><td></td><td>{S(r.obra)}</td></tr>
-                <tr><td className="l">Supervisión de obra</td><td><Num v={p.superv} on={(v) => set('superv', v)} w={70} step="0.01" /></td><td>{S(r.sup)}</td></tr>
-                <tr><td className="l">Estudio definitivo</td><td><Num v={p.estudio} on={(v) => set('estudio', v)} w={70} step="0.01" /></td><td>{S(r.est)}</td></tr>
-                <tr className="tot big"><td className="l">Total de inversión</td><td></td><td>{S(r.inversion)}</td></tr>
+                <tr><td className="l">Supervisión</td><td><Num v={p.superv} on={(v) => set('superv', v)} w={70} step="0.01" /></td><td>{S(r.sup)}</td></tr>
+                <tr><td className="l">Estudio</td><td><Num v={p.estudio} on={(v) => set('estudio', v)} w={70} step="0.01" /></td><td>{S(r.est)}</td></tr>
+                <tr className="tot big"><td className="l">Inversión total</td><td></td><td>{S(r.inversion)}</td></tr>
                 <tr><td className="l">Costo US$</td><td></td><td>US$ {fmt(r.usd, 2)}</td></tr>
                 <tr><td className="l">Costo US$/km</td><td></td><td>US$ {fmt(r.usdKm, 2)}</td></tr>
               </tbody>
@@ -253,44 +254,44 @@ export default function App() {
                 <label>Tipo de cambio (S/ por US$)<Num v={p.tc} on={(v) => set('tc', v)} /></label>
               </div>
             </div>
-            <h3>Costos de mantenimiento (US$/km)</h3>
+            <h3>Mantenimiento (US$ por km)</h3>
             <table className="w"><thead><tr><th></th><th>Precios de mercado</th></tr></thead><tbody>
               <tr><td className="l"><b>Sin proyecto</b></td><td></td></tr>
-              <tr><td className="l">Mant. rutinario</td><td><Num v={p.mantSinRut} on={(v) => set('mantSinRut', v)} /></td></tr>
-              <tr><td className="l">Mant. periódico</td><td><Num v={p.mantSinPer} on={(v) => set('mantSinPer', v)} /></td></tr>
+              <tr><td className="l">Mant. de todos los años</td><td><Num v={p.mantSinRut} on={(v) => set('mantSinRut', v)} /></td></tr>
+              <tr><td className="l">Mant. cada 3 años</td><td><Num v={p.mantSinPer} on={(v) => set('mantSinPer', v)} /></td></tr>
               <tr><td className="l"><b>Con proyecto</b></td><td></td></tr>
-              <tr><td className="l">Mant. rutinario</td><td><Num v={p.mantConRut} on={(v) => set('mantConRut', v)} /></td></tr>
-              <tr><td className="l">Mant. periódico</td><td><Num v={p.mantConPer} on={(v) => set('mantConPer', v)} /></td></tr>
+              <tr><td className="l">Mant. de todos los años</td><td><Num v={p.mantConRut} on={(v) => set('mantConRut', v)} /></td></tr>
+              <tr><td className="l">Mant. cada 3 años</td><td><Num v={p.mantConPer} on={(v) => set('mantConPer', v)} /></td></tr>
               <tr><td className="l">Operación (% del rutinario)</td><td><Num v={p.pctOper} on={(v) => set('pctOper', v)} step="0.01" /></td></tr>
             </tbody></table>
             <p className="note">Fuente: MTC. Ejemplo original del Excel.</p>
           </section>
         )}
 
-        {tab === 'Precios sociales' && (
+        {tab === 'Costos sociales' && (
           <section className="card">
-            <h2>5. Precios sociales</h2>
+            <h2>Costos sociales</h2><p>Se ajustan los costos con factores para reflejar el costo real para el país.</p>
             <div className="grid2">
-              <label>Factor de conversión – inversión<Num v={p.fcInv} on={(v) => set('fcInv', v)} step="0.01" /></label>
-              <label>Factor – mantenimiento y operación<Num v={p.fcMant} on={(v) => set('fcMant', v)} step="0.01" /></label>
+              <label>Factor de la inversión<Num v={p.fcInv} on={(v) => set('fcInv', v)} step="0.01" /></label>
+              <label>Factor del mantenimiento<Num v={p.fcMant} on={(v) => set('fcMant', v)} step="0.01" /></label>
             </div>
-            <h3>Costos a precios de mercado y sociales (S/)</h3>
+            <h3>Costos por año (S/)</h3>
             <div className="scroll"><table>
               <thead><tr><th>Año</th><th>Mant. sin proy. (mercado)</th><th>Inversión (mercado)</th><th>Mant. con proy. (mercado)</th><th>Mant. sin proy. (social)</th><th>Inversión (social)</th><th>Mant. con proy. (social)</th></tr></thead>
               <tbody>{r.anios.map((a) => <tr key={a}><td>{a}</td><td>{a ? fmt(r.sin[a], 2) : ''}</td><td>{a === 0 ? fmt(r.inversion, 2) : ''}</td><td>{a ? fmt(r.con[a], 2) : ''}</td><td>{a ? fmt(r.sinS[a], 2) : ''}</td><td>{a === 0 ? fmt(r.invS, 2) : ''}</td><td>{a ? fmt(r.conS[a], 2) : ''}</td></tr>)}</tbody>
             </table></div>
             <p className="note">* Incluye costo de operación (10% del mantenimiento rutinario). Sin proyecto: periódico en años 1, 4, 7…; con proyecto: periódico en años 3, 6, 9… (igual que el Excel original).</p>
-            <h3>Costos incrementales a precios sociales</h3>
+            <h3>Costo extra que trae la obra, por año</h3>
             <BarChart labels={yl} data={r.flujo} />
           </section>
         )}
 
-        {tab === 'Evaluación' && (
+        {tab === 'Resultado' && (
           <section className="card">
-            <h2>Evaluación económica</h2>
-            <p>Metodología para PIP de rehabilitación: <b>COSTO / EFECTIVIDAD</b>.</p>
+            <h2>Resultado</h2>
+            <p>Se divide el costo total de la obra entre la gente que se beneficia. Mientras más bajo el número, mejor.</p>
             <div className="grid2">
-              <label>Tasa de descuento<Num v={p.tasa} on={(v) => set('tasa', v)} step="0.01" /></label>
+              <label>Tasa de descuento (valor del dinero en el tiempo)<Num v={p.tasa} on={(v) => set('tasa', v)} step="0.01" /></label>
               <label>Valor residual (% de la inversión, último año)<Num v={p.residual} on={(v) => set('residual', v)} step="0.01" /></label>
             </div>
             <div className="scroll"><table>
@@ -298,10 +299,10 @@ export default function App() {
               <tbody>{r.anios.map((a) => <tr key={a}><td>{a}</td><td>{r.incInv[a] ? fmt(r.incInv[a], 2) : ''}</td><td>{a ? fmt(r.incMant[a], 2) : ''}</td><td>{fmt(r.flujo[a], 2)}</td></tr>)}</tbody>
             </table></div>
             <div className="result">
-              <div><span>VACT</span><b>{S(r.vact)}</b></div>
-              <div><span>Población beneficiaria</span><b>{fmt(r.poblProm, 1)}</b></div>
-              <div><span>C/E (S/ por hab.)</span><b>{fmt(r.ce, 2)}</b></div>
-              <div><span>C/E (US$ por hab.)</span><b>{fmt(r.ceUsd, 2)}</b></div>
+              <div><span>Costo total (valor de hoy)</span><b>{S(r.vact)}</b></div>
+              <div><span>Gente beneficiada</span><b>{fmt(r.poblProm, 1)}</b></div>
+              <div><span>Costo por persona (S/)</span><b>{fmt(r.ce, 2)}</b></div>
+              <div><span>Costo por persona (US$)</span><b>{fmt(r.ceUsd, 2)}</b></div>
             </div>
             <BarChart labels={yl} data={r.flujo} />
           </section>
@@ -311,6 +312,60 @@ export default function App() {
       </main>
       <footer>Aplicativo didáctico basado en la Guía Simplificada Caminos Vecinales – Costo Efectividad.</footer>
     </div>
+  )
+}
+
+const SESIONES = [
+  { id: 's1', fecha: '2026-09-26', dia: 'Sábado', hora: '10:00 – 10:30 pm', quien: 'Néstor y Fabricio' },
+  { id: 's2', fecha: '2026-09-29', dia: 'Martes', hora: '3:00 – 3:30 pm', quien: 'Alessandra y Néstor' },
+  { id: 's3', fecha: '2026-10-01', dia: 'Jueves', hora: '4:30 – 5:00 pm', quien: 'Gustavo' },
+  { id: 's4', fecha: '2026-10-03', dia: 'Sábado', hora: '10:00 – 10:30 pm', quien: 'Néstor y Fabricio' },
+  { id: 's5', fecha: '2026-10-06', dia: 'Martes', hora: '3:00 – 3:30 pm', quien: 'Alessandra y Néstor' },
+  { id: 's6', fecha: '2026-10-08', dia: 'Jueves', hora: '4:30 – 5:00 pm', quien: 'Gustavo' },
+]
+const MESC = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
+const fechaCorta = (f: string) => { const [, m, d] = f.split('-'); return `${+d} ${MESC[+m - 1]}` }
+
+function Conteo() {
+  const [datos, setDatos] = useState<Record<string, number[]>>(() => { try { return JSON.parse(localStorage.getItem('cv-conteo') || '{}') } catch { return {} } })
+  useEffect(() => { try { localStorage.setItem('cv-conteo', JSON.stringify(datos)) } catch { /* */ } }, [datos])
+  const hoy = new Date().toISOString().slice(0, 10)
+  const prox = SESIONES.find((x) => x.fecha >= hoy) ?? SESIONES[SESIONES.length - 1]
+  const [id, setId] = useState(prox.id)
+  const ses = SESIONES.find((x) => x.id === id)!
+  const cur = datos[id] ?? VEH.map(() => 0)
+  const sumar = (i: number, d: number) => setDatos({ ...datos, [id]: cur.map((v, x) => (x === i ? Math.max(0, v + d) : v)) })
+  const total = (arr: number[] = []) => arr.reduce((a, b) => a + b, 0)
+  return (
+    <section className="card">
+      <h2>Conteo de carros</h2>
+      <p>Toquen <b>+1</b> cada vez que pase un vehículo. Se guarda solo.</p>
+      <div className="sess">
+        {SESIONES.map((x) => (
+          <button key={x.id} className={x.id === id ? 'on' : ''} onClick={() => setId(x.id)}>
+            <b>{x.dia} {fechaCorta(x.fecha)}</b>
+            <span>{x.hora}</span>
+            <span>{x.quien}</span>
+            <em>{total(datos[x.id])} carros{x.fecha === hoy ? ' · HOY' : x.fecha < hoy ? ' · pasó' : ''}</em>
+          </button>
+        ))}
+      </div>
+      <h3>{ses.dia} {fechaCorta(ses.fecha)} · {ses.hora} · {ses.quien}</h3>
+      <div className="big">
+        {VEH.map((v, i) => (
+          <div key={v} className="bigrow">
+            <span className="vi"><VehIcon i={i} /></span>
+            <span className="nm">{v}</span>
+            <button className="minus" onClick={() => sumar(i, -1)} aria-label="restar uno">−1</button>
+            <b>{cur[i]}</b>
+            <button className="plus1" onClick={() => sumar(i, 1)}>+1</button>
+          </div>
+        ))}
+      </div>
+      <p className="tot1">Total de este horario: <b>{total(cur)}</b> · Total de las 6 visitas: <b>{SESIONES.reduce((a, x) => a + total(datos[x.id]), 0)}</b></p>
+      <button className="warn" onClick={() => { if (confirm('¿Borrar el conteo de este horario?')) setDatos({ ...datos, [id]: VEH.map(() => 0) }) }}>Borrar este horario</button>
+      <p className="note">Son 6 visitas de 30 minutos: martes, jueves y sábado, hasta el jueves 8 de octubre (la presentación es el viernes 9). El sábado figura como 10:00 – 10:30 pm, tal como se escribió en el chat.</p>
+    </section>
   )
 }
 
