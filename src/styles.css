@@ -103,3 +103,8 @@ header p b { color: var(--amarillo); }
 .ruta-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 12px 16px calc(24px + env(safe-area-inset-bottom)); }
 .ruta-btns button { border: 2px solid var(--tinta); background: #fff; border-radius: 4px; padding: 12px 8px; font: 700 16px/1.1 var(--titulo); text-transform: uppercase; letter-spacing: .04em; }
 .ruta-btns button:disabled { opacity: .4; } .ruta-btns .peligro { color: var(--rojo); border-color: var(--rojo); }
+
+.pin i.mid { display: block; width: 14px; height: 14px; margin: 8px; border-radius: 50%; background: #fff; border: 3px solid var(--tinta); }
+.cuad span { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 4px; background: var(--tinta); color: var(--amarillo); border: 2px solid var(--amarillo); font: 700 14px/1 var(--titulo); }
+.paso { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 16px; font-size: 14px; color: var(--suave); border-bottom: 1px solid var(--linea); }
+.paso select { font: inherit; padding: 8px; border: 2px solid var(--tinta); border-radius: 4px; background: #fff; }

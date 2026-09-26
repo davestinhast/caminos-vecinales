@@ -15,6 +15,25 @@ function distanciaRecta(p: Punto[]) {
   return t
 }
 
+// Marca un número cada "cuadra" (por defecto 100 m) a lo largo de la línea
+function marcasCuadras(linea: Punto[], paso: number): Punto[] {
+  const out: Punto[] = []
+  let recorrido = 0
+  let siguiente = paso
+  for (let i = 1; i < linea.length; i++) {
+    const a = L.latLng(linea[i - 1])
+    const b = L.latLng(linea[i])
+    const d = a.distanceTo(b)
+    while (recorrido + d >= siguiente && d > 0) {
+      const f = (siguiente - recorrido) / d
+      out.push([a.lat + (b.lat - a.lat) * f, a.lng + (b.lng - a.lng) * f])
+      siguiente += paso
+    }
+    recorrido += d
+  }
+  return out
+}
+
 // Pide a OSRM que siga las calles reales entre los puntos marcados
 async function porCalles(p: Punto[]): Promise<{ linea: Punto[]; metros: number } | null> {
   if (p.length < 2) return null
@@ -32,6 +51,7 @@ export default function Ruta() {
   const mapaDiv = useRef<HTMLDivElement>(null)
   const mapa = useRef<L.Map | null>(null)
   const capa = useRef<L.LayerGroup | null>(null)
+  const capaRuta = useRef<L.LayerGroup | null>(null)
   const [puntos, setPuntos] = useState<Punto[]>(() => {
     try { return JSON.parse(localStorage.getItem(KEY) || '[]') } catch { return [] }
   })
@@ -40,6 +60,8 @@ export default function Ruta() {
   const [metros, setMetros] = useState(0)
   const [porLasCalles, setPorLasCalles] = useState(false)
   const [aviso, setAviso] = useState('')
+  const [paso, setPaso] = useState(100)
+  const [cuadras, setCuadras] = useState(0)
 
   const fijar = (p: Punto[]) => {
     ref.current = p
@@ -62,6 +84,7 @@ export default function Ruta() {
     if (!mapaDiv.current || mapa.current) return
     const m = L.map(mapaDiv.current, { zoomControl: true }).setView(ref.current[0] ?? PLAZA, 15)
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(m)
+    capaRuta.current = L.layerGroup().addTo(m)
     capa.current = L.layerGroup().addTo(m)
     m.on('click', (e: L.LeafletMouseEvent) => {
       if (ref.current.length >= 25) return
@@ -95,12 +118,14 @@ export default function Ruta() {
   // dibujar puntos y línea
   useEffect(() => {
     const g = capa.current
-    if (!g) return
+    const gr = capaRuta.current
+    if (!g || !gr) return
     g.clearLayers()
+    gr.clearLayers()
     puntos.forEach((p, i) => {
       const ult = i === puntos.length - 1 && puntos.length > 1
       const et = i === 0 ? 'Inicio' : ult ? 'Final' : String(i + 1)
-      const icono = L.divIcon({ className: 'pin', html: `<span class="${i === 0 ? 'ini' : ult ? 'fin' : ''}">${i === 0 ? 'A' : ult ? 'B' : i + 1}</span>`, iconSize: [30, 30], iconAnchor: [15, 15] })
+      const icono = L.divIcon({ className: 'pin', html: i === 0 || ult ? `<span class="${i === 0 ? 'ini' : 'fin'}">${i === 0 ? 'A' : 'B'}</span>` : '<i class="mid"></i>', iconSize: [30, 30], iconAnchor: [15, 15] })
       L.marker(p, { icon: icono, title: et, draggable: true })
         .on('dragend', (e) => {
           const ll = (e.target as L.Marker).getLatLng()
@@ -108,19 +133,26 @@ export default function Ruta() {
         })
         .addTo(g)
     })
-    if (puntos.length < 2) { setMetros(0); setPorLasCalles(false); return }
+    if (puntos.length < 2) { setMetros(0); setPorLasCalles(false); setCuadras(0); return }
     let vivo = true
-    const recta = L.polyline(puntos, { color: '#c8402b', weight: 4, dashArray: '8 8' }).addTo(g)
+    const dibujarCuadras = (linea: Punto[]) => {
+      const m = marcasCuadras(linea, paso)
+      m.forEach((p, k) => L.marker(p, { interactive: false, icon: L.divIcon({ className: 'cuad', html: `<span>${k + 1}</span>`, iconSize: [26, 26], iconAnchor: [13, 13] }) }).addTo(gr))
+      setCuadras(m.length)
+    }
+    L.polyline(puntos, { color: '#c8402b', weight: 4, dashArray: '8 8' }).addTo(gr)
     setMetros(distanciaRecta(puntos)); setPorLasCalles(false)
+    dibujarCuadras(puntos)
     porCalles(puntos).then((r) => {
       if (!vivo || !r) return
-      g.removeLayer(recta)
-      L.polyline(r.linea, { color: '#1b1d20', weight: 8, opacity: 0.9 }).addTo(g)
-      L.polyline(r.linea, { color: '#ffc61a', weight: 4 }).addTo(g)
+      gr.clearLayers()
+      L.polyline(r.linea, { color: '#1b1d20', weight: 8, opacity: 0.9 }).addTo(gr)
+      L.polyline(r.linea, { color: '#ffc61a', weight: 4 }).addTo(gr)
+      dibujarCuadras(r.linea)
       setMetros(r.metros); setPorLasCalles(true)
     })
     return () => { vivo = false }
-  }, [puntos])
+  }, [puntos, paso])
 
   const irAPlaza = () => mapa.current?.setView(PLAZA, 16)
   const miUbicacion = () => {
@@ -136,14 +168,20 @@ export default function Ruta() {
     <div className="ruta">
       <div className="ruta-info">
         <b>Ruta a contar</b>
-        <span>Toca el mapa para marcar puntos. Toca A, luego B. Arrastra un punto para moverlo.</span>
+        <span>Toca el mapa: primero el inicio (A) y luego el final (B). La página numera cada cuadra sola.</span>
       </div>
       <div ref={mapaDiv} className="mapa" />
       <div className="ruta-datos">
         <div><span>Largo</span><b>{km(metros)} km</b></div>
-        <div><span>Puntos</span><b>{puntos.length}</b></div>
+        <div><span>Cuadras</span><b>{cuadras}</b></div>
         <div className="quien">{puntos.length < 2 ? 'Marca al menos 2 puntos' : porLasCalles ? 'Siguiendo las calles' : 'Línea recta (sin calles)'}</div>
       </div>
+      <label className="paso">
+        Largo de una cuadra
+        <select value={paso} onChange={(e) => setPaso(+e.target.value)}>
+          {[50, 80, 100, 120, 150].map((m) => <option key={m} value={m}>{m} metros</option>)}
+        </select>
+      </label>
       <div className="ruta-btns">
         <button onClick={irAPlaza}>Ir a Plaza Mayor</button>
         <button onClick={inicioEnPlaza}>Poner inicio en Plaza Mayor</button>
