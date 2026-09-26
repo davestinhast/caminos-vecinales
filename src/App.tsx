@@ -4,6 +4,44 @@ import Ruta from './Ruta'
 
 const VEH = ['Auto', 'Camioneta', 'Combi', 'Micro', 'Bus', 'Camión chico', 'Camión grande', 'Semi tráiler', 'Tráiler']
 
+// Botón que repite mientras se mantiene presionado (y acelera)
+function Rapido({ className, onPaso, label, children }: { className: string; onPaso: () => void; label: string; children: React.ReactNode }) {
+  const fn = useRef(onPaso)
+  fn.current = onPaso
+  const activo = useRef(false)
+  const t = useRef(0)
+  const parar = () => { activo.current = false; clearTimeout(t.current) }
+  useEffect(() => parar, [])
+  const iniciar = () => {
+    parar()
+    activo.current = true
+    fn.current()
+    let n = 0
+    const tick = () => {
+      if (!activo.current) return
+      fn.current()
+      n++
+      t.current = window.setTimeout(tick, Math.max(35, 120 - n * 5))
+    }
+    t.current = window.setTimeout(tick, 380)
+  }
+  return (
+    <button
+      type="button"
+      className={className}
+      aria-label={label}
+      onPointerDown={(e) => { e.currentTarget.setPointerCapture?.(e.pointerId); iniciar() }}
+      onPointerUp={parar}
+      onPointerCancel={parar}
+      onLostPointerCapture={parar}
+      onContextMenu={(e) => e.preventDefault()}
+      onKeyDown={(e) => { if ((e.key === 'Enter' || e.key === ' ') && !e.repeat) { e.preventDefault(); fn.current() } }}
+    >
+      {children}
+    </button>
+  )
+}
+
 const N = VEH.length // tipos de vehículo; los datos guardan Sentido A (0..N-1) y Sentido B (N..2N-1)
 const NADA = () => Array(N * 2).fill(0) as number[]
 
@@ -123,12 +161,14 @@ export default function App() {
   }, [])
 
   const ses = SESIONES.find((x) => x.id === id)!
+  const datosRef = useRef(datos)
+  datosRef.current = datos
   const cur = datos[id] ?? NADA()
   const hacia = (sent: number, arr: number[] = []) => arr.slice(sent * N, sent * N + N)
 
   const cambiar = (i: number, d: number) => {
     const k = sentido * N + i
-    if (d < 0 && cur[k] <= 0) return
+    if (d < 0 && (datosRef.current[id]?.[k] ?? 0) <= 0) return
     const clave = `${id}:${k}`
     const nuevo = { ...pendRef.current, [clave]: (pendRef.current[clave] ?? 0) + d }
     if (!nuevo[clave]) delete nuevo[clave]
@@ -206,9 +246,9 @@ export default function App() {
             <span className="ic"><VehIcon i={i} /></span>
             <span className="nm">{v}<small>{AYUDA[i]}</small></span>
             <div className="ctrl">
-              <button className="minus" onClick={() => cambiar(i, -1)} aria-label={`Quitar uno a ${v}`}>−1</button>
+              <Rapido className="minus" onPaso={() => cambiar(i, -1)} label={`Quitar uno a ${v}`}>−1</Rapido>
               <b className="n">{cur[sentido * N + i]}</b>
-              <button className="plus" onClick={() => cambiar(i, 1)} aria-label={`Sumar uno a ${v}`}>+1</button>
+              <Rapido className="plus" onPaso={() => cambiar(i, 1)} label={`Sumar uno a ${v}`}>+1</Rapido>
             </div>
           </div>
         ))}
