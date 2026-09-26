@@ -4,6 +4,9 @@ import Ruta from './Ruta'
 
 const VEH = ['Auto', 'Camioneta', 'Combi', 'Micro', 'Bus', 'Camión chico', 'Camión grande', 'Semi tráiler', 'Tráiler']
 
+const N = VEH.length // tipos de vehículo; los datos guardan Sentido A (0..N-1) y Sentido B (N..2N-1)
+const NADA = () => Array(N * 2).fill(0) as number[]
+
 const SESIONES = [
   { id: 's1', fecha: '2026-09-26', dia: 'Sáb', hora: '10:00 a 10:30 am', quien: 'Fabrizio y Néstor' },
   { id: 's2', fecha: '2026-09-29', dia: 'Mar', hora: '3:00 a 3:30 pm', quien: 'Alessandra y Alondra' },
@@ -24,7 +27,7 @@ type Pend = Record<string, number> // "s1:0" -> cambios que aún no llegaron al 
 const KEY = 'cv-servidor'
 const KEYP = 'cv-pendiente'
 
-const vacio = (): Datos => Object.fromEntries(SESIONES.map((x) => [x.id, VEH.map(() => 0)]))
+const vacio = (): Datos => Object.fromEntries(SESIONES.map((x) => [x.id, NADA()]))
 
 function leer<T>(k: string, def: T): T {
   try {
@@ -39,7 +42,7 @@ function escribir(k: string, v: unknown) {
 // valor mostrado = servidor + cambios pendientes (nunca menor que 0)
 function mezclar(srv: Datos, pend: Pend): Datos {
   const out: Datos = {}
-  for (const x of SESIONES) out[x.id] = VEH.map((_, k) => Math.max(0, (srv[x.id]?.[k] ?? 0) + (pend[`${x.id}:${k}`] ?? 0)))
+  for (const x of SESIONES) out[x.id] = NADA().map((_, k) => Math.max(0, (srv[x.id]?.[k] ?? 0) + (pend[`${x.id}:${k}`] ?? 0)))
   return out
 }
 
@@ -60,6 +63,7 @@ export default function App() {
   const hoy = hoyStr()
   const [id, setId] = useState((SESIONES.find((x) => x.fecha >= hoy) ?? SESIONES[SESIONES.length - 1]).id)
   const [aviso, setAviso] = useState('')
+  const [sentido, setSentido] = useState(0)
   const [vista, setVista] = useState<'conteo' | 'ruta'>(location.hash === '#ruta' ? 'ruta' : 'conteo')
 
   const fijarSrv = (d: Datos) => { srvRef.current = d; setSrv(d); escribir(KEY, d) }
@@ -80,7 +84,7 @@ export default function App() {
         nuevo[clave] = (nuevo[clave] ?? 0) - delta
         if (!nuevo[clave]) delete nuevo[clave]
         version.current++
-        const s2 = { ...srvRef.current, [sesion]: (srvRef.current[sesion] ?? VEH.map(() => 0)).map((v, k) => (k === +tipo ? valor : v)) }
+        const s2 = { ...srvRef.current, [sesion]: (srvRef.current[sesion] ?? NADA()).map((v, k) => (k === +tipo ? valor : v)) }
         fijarSrv(s2)
         fijarPend(nuevo)
       }
@@ -119,11 +123,13 @@ export default function App() {
   }, [])
 
   const ses = SESIONES.find((x) => x.id === id)!
-  const cur = datos[id] ?? VEH.map(() => 0)
+  const cur = datos[id] ?? NADA()
+  const hacia = (sent: number, arr: number[] = []) => arr.slice(sent * N, sent * N + N)
 
   const cambiar = (i: number, d: number) => {
-    if (d < 0 && cur[i] <= 0) return
-    const clave = `${id}:${i}`
+    const k = sentido * N + i
+    if (d < 0 && cur[k] <= 0) return
+    const clave = `${id}:${k}`
     const nuevo = { ...pendRef.current, [clave]: (pendRef.current[clave] ?? 0) + d }
     if (!nuevo[clave]) delete nuevo[clave]
     fijarPend(nuevo)
@@ -132,13 +138,15 @@ export default function App() {
   }
 
   const resumen = () => {
-    const linea = (arr: number[] = []) => VEH.map((v, k) => `${v}: ${arr[k] ?? 0}`).join('\n')
+    const linea = (arr: number[]) => VEH.map((v, k) => `${v}: ${arr[k] ?? 0}`).join('\n')
+    const bloque = (arr: number[] = []) =>
+      ['A', 'B'].map((n, sent) => `Sentido ${n} (${sent ? 'de B hacia A' : 'de A hacia B'}): ${sum(hacia(sent, arr))}\n${linea(hacia(sent, arr))}`).join('\n\n')
     const hechas = SESIONES.filter((x) => sum(datos[x.id]) > 0)
-    const porTipo = VEH.map((_, k) => SESIONES.reduce((a, x) => a + (datos[x.id]?.[k] ?? 0), 0))
+    const todo = NADA().map((_, k) => SESIONES.reduce((a, x) => a + (datos[x.id]?.[k] ?? 0), 0))
     const dias = hechas
-      .map((x) => `${x.dia} ${corta(x.fecha)}, ${x.hora} (${x.quien})\n${linea(datos[x.id])}\nTotal del día: ${sum(datos[x.id])}`)
+      .map((x) => `${x.dia} ${corta(x.fecha)}, ${x.hora} (${x.quien})\n${bloque(datos[x.id])}\nTotal del día: ${sum(datos[x.id])}`)
       .join('\n\n')
-    return `CONTEO DE CARROS\n\n${dias}${hechas.length ? '\n\n' : ''}TOTAL DE TODOS LOS DÍAS\n${linea(porTipo)}\nTOTAL: ${sum(porTipo)}`
+    return `CONTEO DE CARROS\n\n${dias}${hechas.length ? '\n\n' : ''}TOTAL DE TODOS LOS DÍAS\n${bloque(todo)}\n\nAMBOS SENTIDOS\n${linea(VEH.map((_, k) => todo[k] + todo[N + k]))}\nTOTAL: ${sum(todo)}`
   }
 
   const copiar = async () => {
@@ -183,6 +191,15 @@ export default function App() {
         <span>{ses.quien}</span>
       </div>
 
+      <div className="sentidos" role="tablist" aria-label="Sentido">
+        {['A', 'B'].map((n, sent) => (
+          <button key={n} className={sentido === sent ? 'on' : ''} onClick={() => setSentido(sent)}>
+            <b>Sentido {n}</b>
+            <span>{sent ? 'de B hacia A' : 'de A hacia B'} · {sum(hacia(sent, cur))} carros</span>
+          </button>
+        ))}
+      </div>
+
       <main className="big">
         {VEH.map((v, i) => (
           <div key={v} className="row">
@@ -190,7 +207,7 @@ export default function App() {
             <span className="nm">{v}<small>{AYUDA[i]}</small></span>
             <div className="ctrl">
               <button className="minus" onClick={() => cambiar(i, -1)} aria-label={`Quitar uno a ${v}`}>−1</button>
-              <b className="n">{cur[i]}</b>
+              <b className="n">{cur[sentido * N + i]}</b>
               <button className="plus" onClick={() => cambiar(i, 1)} aria-label={`Sumar uno a ${v}`}>+1</button>
             </div>
           </div>
@@ -199,6 +216,7 @@ export default function App() {
 
       <footer className="bar">
         <div><span>Este día</span><b>{sum(cur)}</b></div>
+        <div><span>Sentido {sentido ? 'B' : 'A'}</span><b>{sum(hacia(sentido, cur))}</b></div>
         <div><span>Total</span><b>{SESIONES.reduce((a, s) => a + sum(datos[s.id]), 0)}</b></div>
         <button onClick={copiar}>Copiar</button>
       </footer>
